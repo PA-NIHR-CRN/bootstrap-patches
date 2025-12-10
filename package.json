@@ -1,7 +1,7 @@
 {
-  "name": "bootstrap",
+  "name": "@pa-nihr-crn/bootstrap-3.4.1-patched",
   "description": "The most popular front-end framework for developing responsive, mobile first projects on the web.",
-  "version": "3.4.1",
+  "version": "3.4.1-p1",
   "keywords": [
     "css",
     "less",
@@ -97,5 +97,8 @@
       "fonts",
       "js"
     ]
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   }
 }

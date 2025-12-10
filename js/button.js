@@ -26,6 +26,9 @@
   }
 
   Button.prototype.setState = function (state) {
+    // No-op for loading state to prevent XSS vulnerability (SNYK-JS-BOOTSTRAP-7444617)
+    if (state == 'loading') return
+
     var d    = 'disabled'
     var $el  = this.$element
     var val  = $el.is('input') ? 'val' : 'html'
