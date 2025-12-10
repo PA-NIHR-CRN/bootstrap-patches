@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoC: SNYK-JS-BOOTSTRAP-7444617 - XSS via data-target</title>
+    <link rel="stylesheet" href="../dist/css/@pa-nihr-crn/bootstrap-3.4.1-patched.min.css">
+    <script src="../js/tests/vendor/jquery.min.js"></script>
+    <script src="../dist/js/@pa-nihr-crn/bootstrap-3.4.1-patched.min.js"></script>
+</head>
+
+<body>
+    <div class="container" style="margin-top: 50px;">
+        <h1>Bootstrap 3.4.1 - XSS Vulnerability PoC</h1>
+        <h2>SNYK-JS-BOOTSTRAP-7444617</h2>
+
+        <p>This demonstrates an XSS vulnerability in Bootstrap's button plugin when using data-loading-text.</p>
+
+        <hr>
+
+        <h3>Test Case: XSS via data-loading-text</h3>
+
+        <input id="firstName" type="text" class="form-control"
+            value="<script>alert('XSS Input Success')</script><span>Loading XSS</span>" style="margin-bottom: 15px;" />
+        <button class="btn btn-primary input-test" data-loading-text="<span>I'm Loading</span>" type="button">
+            Click Me
+        </button>
+
+        <hr>
+
+        <div class="alert alert-info">
+            <strong>Expected Result (Vulnerable):</strong> If vulnerable, an alert box should appear when clicking the
+            button, as the XSS payload from the input field is executed.
+            <br>
+            <strong>Patched Result:</strong> No alert box should appear; the payload should be sanitized.
+        </div>
+
+        <div class="alert alert-warning">
+            <strong>Note:</strong> This page currently uses the patched version of Bootstrap. To recreate the
+            vulnerability and see the XSS attack in action, update the <code>&lt;head&gt;</code> tag includes to
+            reference the original vulnerable Bootstrap 3.4.1 from a CDN:
+            <pre style="margin-top: 10px; background: #f5f5f5; padding: 10px; border-radius: 4px;">&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"&gt;&lt;/script&gt;</pre>
+        </div>
+
+        <hr>
+
+        <h3>Patch Details</h3>
+        <div class="alert alert-success">
+            <strong>File Modified:</strong> <code>js/button.js</code>
+            <br><br>
+            <strong>Change Applied:</strong> Added an early return in the <code>Button.prototype.setState</code>
+            function to no-op the loading state functionality, which prevents the XSS vulnerability via
+            <code>data-loading-text</code>.
+            <br><br>
+            <strong>Location:</strong> Line 28-30 (beginning of <code>setState</code> function)
+            <br><br>
+            <strong>Code Change:</strong>
+            <pre style="margin-top: 10px; background: #f5f5f5; padding: 10px; border-radius: 4px;">Button.prototype.setState = function (state) {
+  // No-op for loading state to prevent XSS vulnerability (SNYK-JS-BOOTSTRAP-7444617)
+  if (state == 'loading') return
+  
+  // ... rest of function continues</pre>
+            <strong>Rationale:</strong> Since the application does not use <code>data-loading-text</code> functionality
+            anywhere, completely disabling the loading state feature eliminates the vulnerability without impacting
+            functionality.
+        </div>
+    </div>
+
+    <script>
+        $(function () {
+            $('.input-test').click(function () {
+                var inputValue = $('#firstName').val();
+                $(this).data('loadingText', inputValue);
+                $(this).button('loading', inputValue);
+            });
+        });
+    </script>
+</body>
+
+</html>
