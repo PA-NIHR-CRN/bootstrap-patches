@@ -119,7 +119,7 @@ module.exports = function (grunt) {
           'js/tab.js',
           'js/affix.js'
         ],
-        dest: 'dist/js/<%= pkg.name %>.js'
+        dest: 'dist/js/<%= pkg.distName %>.js'
       }
     },
 
@@ -134,7 +134,7 @@ module.exports = function (grunt) {
       },
       core: {
         src: '<%= concat.core.dest %>',
-        dest: 'dist/js/<%= pkg.name %>.min.js'
+        dest: 'dist/js/<%= pkg.distName %>.min.js'
       },
       customize: {
         src: configBridge.paths.customizerJs,
@@ -155,19 +155,19 @@ module.exports = function (grunt) {
       },
       core: {
         options: {
-          sourceMapURL: '<%= pkg.name %>.css.map',
-          sourceMapFilename: 'dist/css/<%= pkg.name %>.css.map'
+          sourceMapURL: '<%= pkg.distName %>.css.map',
+          sourceMapFilename: 'dist/css/<%= pkg.distName %>.css.map'
         },
         src: 'less/bootstrap.less',
-        dest: 'dist/css/<%= pkg.name %>.css'
+        dest: 'dist/css/<%= pkg.distName %>.css'
       },
       theme: {
         options: {
-          sourceMapURL: '<%= pkg.name %>-theme.css.map',
-          sourceMapFilename: 'dist/css/<%= pkg.name %>-theme.css.map'
+          sourceMapURL: '<%= pkg.distName %>-theme.css.map',
+          sourceMapFilename: 'dist/css/<%= pkg.distName %>-theme.css.map'
         },
         src: 'less/theme.less',
-        dest: 'dist/css/<%= pkg.name %>-theme.css'
+        dest: 'dist/css/<%= pkg.distName %>-theme.css'
       },
       docs: {
         options: {
@@ -197,10 +197,10 @@ module.exports = function (grunt) {
         ]
       },
       core: {
-        src: 'dist/css/<%= pkg.name %>.css'
+        src: 'dist/css/<%= pkg.distName %>.css'
       },
       theme: {
-        src: 'dist/css/<%= pkg.name %>-theme.css'
+        src: 'dist/css/<%= pkg.distName %>-theme.css'
       },
       docs: {
         src: 'docs/assets/css/docs.css'
@@ -244,12 +244,12 @@ module.exports = function (grunt) {
         }
       },
       core: {
-        src: 'dist/css/<%= pkg.name %>.css',
-        dest: 'dist/css/<%= pkg.name %>.min.css'
+        src: 'dist/css/<%= pkg.distName %>.css',
+        dest: 'dist/css/<%= pkg.distName %>.min.css'
       },
       theme: {
-        src: 'dist/css/<%= pkg.name %>-theme.css',
-        dest: 'dist/css/<%= pkg.name %>-theme.min.css'
+        src: 'dist/css/<%= pkg.distName %>-theme.css',
+        dest: 'dist/css/<%= pkg.distName %>-theme.min.css'
       },
       docs: {
         src: 'docs/assets/css/docs.css',

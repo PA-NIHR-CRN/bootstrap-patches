@@ -1,5 +1,6 @@
 {
   "name": "@pa-nihr-crn/bootstrap-3.4.1-patched",
+  "distName": "bootstrap",
   "description": "The most popular front-end framework for developing responsive, mobile first projects on the web.",
   "version": "3.4.1-p1",
   "keywords": [
